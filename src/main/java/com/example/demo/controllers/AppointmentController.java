@@ -27,12 +27,12 @@ public class AppointmentController {
     AppointmentRepository appointmentRepository;
 
     @GetMapping("/appointments")
-    public ResponseEntity<List<Appointment>> getAllAppointments(){
+    public ResponseEntity<List<Appointment>> getAllAppointments() {
         List<Appointment> appointments = new ArrayList<>();
 
         appointmentRepository.findAll().forEach(appointments::add);
 
-        if (appointments.isEmpty()){
+        if (appointments.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
 
@@ -40,45 +40,107 @@ public class AppointmentController {
     }
 
     @GetMapping("/appointments/{id}")
-    public ResponseEntity<Appointment> getAppointmentById(@PathVariable("id") long id){
+    public ResponseEntity<Appointment> getAppointmentById(@PathVariable("id") long id) {
         Optional<Appointment> appointment = appointmentRepository.findById(id);
 
-        if (appointment.isPresent()){
-            return new ResponseEntity<>(appointment.get(),HttpStatus.OK);
-        }else {
+        if (appointment.isPresent()) {
+            return new ResponseEntity<>(appointment.get(), HttpStatus.OK);
+        } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
     @PostMapping("/appointment")
-    public ResponseEntity<List<Appointment>> createAppointment(@RequestBody Appointment appointment){
-        /** TODO 
-         * Implement this function, which acts as the POST /api/appointment endpoint.
-         * Make sure to check out the whole project. Specially the Appointment.java class
-         */
-        return new ResponseEntity<>(HttpStatus.I_AM_A_TEAPOT);
+    public ResponseEntity<List<Appointment>> createAppointment(@RequestBody Appointment appointment) {
+        List<Appointment> existingAppointments = appointmentRepository.findAll();
+        if (!isValidAppointment(appointment)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        if (!isDoctorScheduleAvailable(appointment, existingAppointments)) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
+        }
+        if (isAppointmentConflict(appointment, existingAppointments) && !isRoomScheduleAvailable(appointment, existingAppointments)) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
+        }
+        appointmentRepository.save(appointment);
+        return ResponseEntity.ok(appointmentRepository.findAll());
     }
 
-
     @DeleteMapping("/appointments/{id}")
-    public ResponseEntity<HttpStatus> deleteAppointment(@PathVariable("id") long id){
+    public ResponseEntity<HttpStatus> deleteAppointment(@PathVariable("id") long id) {
 
         Optional<Appointment> appointment = appointmentRepository.findById(id);
 
-        if (!appointment.isPresent()){
+        if (!appointment.isPresent()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
         appointmentRepository.deleteById(id);
 
         return new ResponseEntity<>(HttpStatus.OK);
-        
+
     }
 
     @DeleteMapping("/appointments")
-    public ResponseEntity<HttpStatus> deleteAllAppointments(){
+    public ResponseEntity<HttpStatus> deleteAllAppointments() {
         appointmentRepository.deleteAll();
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private boolean isValidAppointment(Appointment appointment) {
+        return appointment.getStartsAt().isBefore(appointment.getFinishesAt());
+    }
+
+    private boolean isAppointmentConflict(Appointment appointment,
+                                          List<Appointment> existingAppointments) {
+      for (Appointment existingAppointment : existingAppointments) {
+            if (!existingAppointment.equals(appointment) &&
+                    existingAppointment.getRoom().equals(appointment.getRoom()) &&
+                    existingAppointment.getStartsAt().isBefore(appointment.getFinishesAt()) &&
+                    existingAppointment.getFinishesAt().isAfter(appointment.getStartsAt())) {
+                return true;
+            }
+            if (existingAppointment.getRoom().equals(appointment.getRoom()) &&
+                    existingAppointment.getStartsAt().isEqual(appointment.getStartsAt()) &&
+                    existingAppointment.getFinishesAt().isEqual(appointment.getFinishesAt())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isDoctorScheduleAvailable(Appointment proposedAppointment,
+                                              List<Appointment> existingAppointments) {
+        for (Appointment existingAppointment : existingAppointments) {
+            if (existingAppointment.getDoctor().equals(proposedAppointment.getDoctor()) &&
+                    existingAppointment.getStartsAt().isBefore(proposedAppointment.getFinishesAt()) &&
+                    existingAppointment.getFinishesAt().isAfter(proposedAppointment.getStartsAt())) {
+                return false;
+            }
+            if (existingAppointment.getDoctor().equals(proposedAppointment.getDoctor()) &&
+                    existingAppointment.getStartsAt().isEqual(proposedAppointment.getStartsAt()) &&
+                    existingAppointment.getFinishesAt().isEqual(proposedAppointment.getFinishesAt())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isRoomScheduleAvailable(Appointment proposedAppointment,
+                                            List<Appointment> existingAppointments) {
+        for (Appointment existingAppointment : existingAppointments) {
+            if (existingAppointment.getRoom().equals(proposedAppointment.getRoom()) &&
+                    existingAppointment.getStartsAt().isBefore(proposedAppointment.getFinishesAt()) &&
+                    existingAppointment.getFinishesAt().isAfter(proposedAppointment.getStartsAt())) {
+                return false;
+            }
+            if (existingAppointment.getRoom().equals(proposedAppointment.getRoom()) &&
+                    existingAppointment.getStartsAt().isEqual(proposedAppointment.getStartsAt()) &&
+                    existingAppointment.getFinishesAt().isEqual(proposedAppointment.getFinishesAt())) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
