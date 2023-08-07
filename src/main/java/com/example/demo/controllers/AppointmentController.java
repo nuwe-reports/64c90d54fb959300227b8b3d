@@ -63,7 +63,8 @@ public class AppointmentController {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
         }
         appointmentRepository.save(appointment);
-        return ResponseEntity.ok(appointmentRepository.findAll());
+        List<Appointment> updatedAppointments = appointmentRepository.findAll();
+        return ResponseEntity.ok(updatedAppointments);
     }
 
     @DeleteMapping("/appointments/{id}")
@@ -91,16 +92,15 @@ public class AppointmentController {
         return appointment.getStartsAt().isBefore(appointment.getFinishesAt());
     }
 
-    private boolean isAppointmentConflict(Appointment appointment,
-                                          List<Appointment> existingAppointments) {
-      for (Appointment existingAppointment : existingAppointments) {
+    private boolean isAppointmentConflict(Appointment appointment, List<Appointment> existingAppointments) {
+        for (Appointment existingAppointment : existingAppointments) {
             if (!existingAppointment.equals(appointment) &&
-                    existingAppointment.getRoom().equals(appointment.getRoom()) &&
+                    existingAppointment.getRoom().getRoomName().equals(appointment.getRoom().getRoomName()) &&
                     existingAppointment.getStartsAt().isBefore(appointment.getFinishesAt()) &&
                     existingAppointment.getFinishesAt().isAfter(appointment.getStartsAt())) {
                 return true;
             }
-            if (existingAppointment.getRoom().equals(appointment.getRoom()) &&
+            if (existingAppointment.getRoom().getRoomName().equals(appointment.getRoom().getRoomName()) &&
                     existingAppointment.getStartsAt().isEqual(appointment.getStartsAt()) &&
                     existingAppointment.getFinishesAt().isEqual(appointment.getFinishesAt())) {
                 return true;
@@ -109,8 +109,7 @@ public class AppointmentController {
         return false;
     }
 
-    private boolean isDoctorScheduleAvailable(Appointment proposedAppointment,
-                                              List<Appointment> existingAppointments) {
+    private boolean isDoctorScheduleAvailable(Appointment proposedAppointment, List<Appointment> existingAppointments) {
         for (Appointment existingAppointment : existingAppointments) {
             if (existingAppointment.getDoctor().equals(proposedAppointment.getDoctor()) &&
                     existingAppointment.getStartsAt().isBefore(proposedAppointment.getFinishesAt()) &&
@@ -126,15 +125,14 @@ public class AppointmentController {
         return true;
     }
 
-    private boolean isRoomScheduleAvailable(Appointment proposedAppointment,
-                                            List<Appointment> existingAppointments) {
+    private boolean isRoomScheduleAvailable(Appointment proposedAppointment, List<Appointment> existingAppointments) {
         for (Appointment existingAppointment : existingAppointments) {
-            if (existingAppointment.getRoom().equals(proposedAppointment.getRoom()) &&
+            if (existingAppointment.getRoom().getRoomName().equals(proposedAppointment.getRoom().getRoomName()) &&
                     existingAppointment.getStartsAt().isBefore(proposedAppointment.getFinishesAt()) &&
                     existingAppointment.getFinishesAt().isAfter(proposedAppointment.getStartsAt())) {
                 return false;
             }
-            if (existingAppointment.getRoom().equals(proposedAppointment.getRoom()) &&
+            if (existingAppointment.getRoom().getRoomName().equals(proposedAppointment.getRoom().getRoomName()) &&
                     existingAppointment.getStartsAt().isEqual(proposedAppointment.getStartsAt()) &&
                     existingAppointment.getFinishesAt().isEqual(proposedAppointment.getFinishesAt())) {
                 return false;
