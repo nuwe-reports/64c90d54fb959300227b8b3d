@@ -2,8 +2,8 @@ FROM mysql:latest
 
 ENV MYSQL_ROOT_PASSWORD=root_password
 ENV MYSQL_DATABASE=accwe-hospital
-ENV MYSQL_USER=your_user
-ENV MYSQL_PASSWORD=your_password
+ENV MYSQL_USER=root
+ENV MYSQL_PASSWORD=root
 
 COPY init.sql /docker-entrypoint-initdb.d/
 
