@@ -95,7 +95,7 @@ public class AppointmentController {
     private boolean isAppointmentConflict(Appointment appointment, List<Appointment> existingAppointments) {
         for (Appointment existingAppointment : existingAppointments) {
             if (!existingAppointment.equals(appointment) &&
-                    existingAppointment.getRoom().equals(appointment.getRoom()) &&
+                    existingAppointment.getRoom().getRoomName().equals(appointment.getRoom().getRoomName()) &&
                     existingAppointment.getStartsAt().isBefore(appointment.getFinishesAt()) &&
                     existingAppointment.getFinishesAt().isAfter(appointment.getStartsAt())) {
                 return true;
@@ -127,7 +127,7 @@ public class AppointmentController {
 
     private boolean isRoomScheduleAvailable(Appointment proposedAppointment, List<Appointment> existingAppointments) {
         for (Appointment existingAppointment : existingAppointments) {
-            if (existingAppointment.getRoom().equals(proposedAppointment.getRoom()) &&
+            if (existingAppointment.getRoom().getRoomName().equals(proposedAppointment.getRoom().getRoomName()) &&
                     existingAppointment.getStartsAt().isBefore(proposedAppointment.getFinishesAt()) &&
                     existingAppointment.getFinishesAt().isAfter(proposedAppointment.getStartsAt())) {
                 return false;
